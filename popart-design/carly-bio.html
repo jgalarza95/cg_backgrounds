@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carly – Bio</title>
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #111; }
+
+/* ── Wrapper ── */
+#cgbio {
+  position: relative;
+  width: 100%;
+  max-width: 1536px;
+  margin: 0 auto;
+  overflow: hidden;
+  line-height: 0;        /* kills phantom inline-block gaps */
+}
+
+/* ── Background ── */
+#cgbio .cg-bg {
+  display: block;
+  width: 100%;
+  transform: scale(1.07);          /* slight crop so parallax never shows edge */
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* ── Absolute overlay base ── */
+#cgbio .cg-abs {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+}
+
+#cgbio .cg-abs img {
+  display: block;
+  width: 100%;
+}
+
+/* ── Parallax wrappers (JS-only transforms) ── */
+#cgbio .cg-par {
+  will-change: transform;
+}
+
+/* ── Entry animation wrappers ── */
+#cgbio .cg-entry-l {
+  opacity: 0;
+  transform: translateX(-8%);
+  transition:
+    opacity  1s   ease,
+    transform 1.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#cgbio .cg-entry-r {
+  opacity: 0;
+  transform: translateX(8%);
+  transition:
+    opacity   1s   ease 0.3s,
+    transform 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.3s;
+}
+
+/* Triggered state */
+#cgbio.is-vis .cg-entry-l,
+#cgbio.is-vis .cg-entry-r {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ── Portrait float (starts after entry completes ≈1.6 s) ── */
+@keyframes cgFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+#cgbio.is-vis .cg-entry-r img {
+  animation: cgFloat 5.5s ease-in-out 1.7s infinite;
+}
+</style>
+</head>
+<body>
+
+<!-- ─────────── SPACE ABOVE (for scroll demo) ─────────── -->
+<div style="height:60vh; display:flex; align-items:center; justify-content:center;">
+  <p style="color:#555; font-family:sans-serif; font-size:14px;">↓ scroll down ↓</p>
+</div>
+
+<!-- ─────────── BIO BLOCK ─────────── -->
+<div id="cgbio">
+
+  <!-- Layer 0 · Background -->
+  <img class="cg-bg" id="cgBg"
+    src="https://jgalarza95.github.io/cg_backgrounds/popart-design/cg-popart-bio-background-1536px.jpg"
+    alt="">
+
+  <!-- Layer 1 · Panel (slides in from left) -->
+  <div class="cg-abs">
+    <div class="cg-par" id="cgParPanel">
+      <div class="cg-entry-l">
+        <img
+          src="https://jgalarza95.github.io/cg_backgrounds/popart-design/panels/cg-popart-bio-panel01-1536px.png"
+          alt="">
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 2 · Portrait (slides in from right + floats) -->
+  <div class="cg-abs">
+    <div class="cg-par" id="cgParPort">
+      <div class="cg-entry-r">
+        <img
+          src="https://jgalarza95.github.io/cg_backgrounds/popart-design/portraits/cg-popart-bio-retrato01-1536px.png"
+          alt="">
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- ─────────── end BIO BLOCK ─────────── -->
+
+<!-- ─────────── SPACE BELOW (for scroll demo) ─────────── -->
+<div style="height:60vh;"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var bio    = document.getElementById('cgbio');
+  var bg     = document.getElementById('cgBg');
+  var pPanel = document.getElementById('cgParPanel');
+  var pPort  = document.getElementById('cgParPort');
+  var active = false;
+
+  /* ── Entry: fire when element is 10 % visible ── */
+  function activate() {
+    if (active) return;
+    active = true;
+    bio.classList.add('is-vis');
+  }
+
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries, obs) {
+      if (entries[0].isIntersecting) { activate(); obs.disconnect(); }
+    }, { threshold: 0.10 }).observe(bio);
+  } else {
+    activate(); // fallback: no IO support
+  }
+
+  /* ── Parallax on scroll ── */
+  function parallax() {
+    var rect = bio.getBoundingClientRect();
+    var vh   = window.innerHeight || document.documentElement.clientHeight;
+
+    /* t goes 0 (element bottom at viewport bottom) → 1 (element top at viewport top) */
+    var t = 1 - rect.bottom / (vh + rect.height);
+    var d = t - 0.5; /* center around 0 → range -0.5 … +0.5 */
+
+    /* Background: slow drift, same scale maintained to avoid edge bleed */
+    bg.style.transform = 'scale(1.07) translateY(' + (d * 38) + 'px)';
+
+    /* Panel: gentle downward drift (same direction as scroll) */
+    pPanel.style.transform = 'translateY(' + (d * 16) + 'px)';
+
+    /* Portrait: counter-drift (gives depth separation from panel) */
+    pPort.style.transform  = 'translateY(' + (d * -12) + 'px)';
+  }
+
+  window.addEventListener('scroll', parallax, { passive: true });
+  parallax(); /* initialise on load */
+})();
+</script>
+
+</body>
+</html>
